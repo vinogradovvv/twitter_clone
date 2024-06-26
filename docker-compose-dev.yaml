@@ -1,0 +1,24 @@
+version: '2'
+services:
+
+  postgres_dev:
+    image: postgres:15.3-bullseye
+    restart: always
+    container_name: postgres_dev
+    env_file: ./envs/dev.env
+    environment:
+      - log_destination=stderr
+      - logging_collector=on
+      - log_directory=/var/log/postgres_logs
+    ports:
+      - "5432:5432"
+    volumes:
+      - /db_test:/var/lib/postgresql/data
+    networks:
+      - docker_network
+
+networks:
+  docker_network:
+
+volumes:
+  media:

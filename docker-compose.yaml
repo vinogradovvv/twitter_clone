@@ -1,0 +1,60 @@
+version: '2'
+
+services:
+  postgres:
+    image: postgres:15.3-bullseye
+    restart: always
+    container_name: postgres
+    env_file: ./envs/prod.env
+    environment:
+      - log_destination=stderr
+      - logging_collector=on
+      - log_directory=/var/log/postgres_logs
+    ports:
+      - "5432:5432"
+    volumes:
+      - /db:/var/lib/postgresql/data
+    networks:
+      - docker_network
+
+  app:
+    env_file:
+      - envs/prod.env
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    container_name: app
+    environment:
+      DB_HOST: postgres
+
+    stop_signal: SIGTERM
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - docker_network
+    volumes:
+      - media:/app/media
+
+  nginx:
+    container_name: nginx
+    image: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/usr/share/nginx/html
+      - ./logs:/var/log/nginx
+      - media:/usr/share/nginx/html/media
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - docker_network
+
+networks:
+  docker_network:
+
+volumes:
+  media:
